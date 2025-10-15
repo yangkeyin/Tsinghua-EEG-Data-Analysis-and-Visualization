@@ -93,3 +93,17 @@ OVERWRITE_EXISTING = True
 
 # 是否显示进度信息
 VERBOSE = True
+
+# ===================================================================
+# 预处理设置 (Preprocessing Settings)
+# ===================================================================
+
+# 陷波滤波频率 (Hz)
+NOTCH_FREQS = [50, 100, 150]
+
+# 带通滤波频率范围 (Hz)
+BANDPASS_L_FREQ = 0.5
+BANDPASS_H_FREQ = 200
+
+# 降采样频率 (Hz)
+RESAMPLE_FREQ = 500

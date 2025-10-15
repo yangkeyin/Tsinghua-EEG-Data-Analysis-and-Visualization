@@ -1,5 +1,6 @@
 import os
 import sys
+from mne.io import Raw
 import numpy as np
 import mne
 import shutil
@@ -8,13 +9,29 @@ import glob
 
 # 添加utils目录到系统路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/utils')
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/config')
 
 # 导入RHD文件读取工具
 from importrhdutilities import load_file
 from rhd_event_extractor import extract_events_from_rhd_folder, save_events_to_file
+from preprocess import preprocess
 
 # 导入配置
-import config.config as config
+import config as config
+
+'''
+总功能：
+    1. 从RHD文件中提取事件
+    2. 转换为MNE事件数组
+    3. 保存事件文件
+
+251015：
+    在创建fif数据之前先预处理：
+        1. 陷波（50，100，150）
+        2. 带通滤波（0.5-200）
+        3. 共模去噪
+        4. 降采样（500Hz）
+'''
 
 
 def get_subject_id_from_folder(folder_name):
@@ -122,7 +139,7 @@ def create_mne_raw_from_rhd_data(rhd_data):
     # 但我们已经有了这种格式的数据，所以可以直接使用
     
     # 创建Raw对象
-    raw = mne.io.RawArray(data, info)
+    raw = mne.io.RawArray(data, info)   
     
     return raw
 
@@ -187,6 +204,10 @@ def main():
             # 创建MNE Raw对象
             print("创建MNE Raw对象...")
             raw = create_mne_raw_from_rhd_data(rhd_data)
+
+            # 预处理
+            print("预处理数据...")
+            raw_processed = preprocess(raw)
             
             # 生成事件
             print("生成事件文件...")
@@ -225,7 +246,7 @@ def main():
             
             # 保存Raw对象
             print(f"保存FIF文件到: {fif_path}")
-            raw.save(fif_path, overwrite=config.OVERWRITE_EXISTING)
+            raw_processed.save(fif_path, overwrite=config.OVERWRITE_EXISTING)
             
             # 保存事件文件
             print(f"保存事件文件到: {events_path}")

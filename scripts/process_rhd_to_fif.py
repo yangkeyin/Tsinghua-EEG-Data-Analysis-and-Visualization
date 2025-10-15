@@ -7,13 +7,14 @@ from datetime import datetime
 import glob
 
 # 添加utils目录到系统路径
-sys.path.append(os.path.join(os.path.dirname(__file__), 'utils'))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/utils')
 
 # 导入RHD文件读取工具
 from importrhdutilities import load_file
+from rhd_event_extractor import extract_events_from_rhd_folder, save_events_to_file
 
 # 导入配置
-import config
+import config.config as config
 
 
 def get_subject_id_from_folder(folder_name):
@@ -105,11 +106,11 @@ def merge_rhd_files(rhd_files):
 def create_mne_raw_from_rhd_data(rhd_data):
     """从RHD数据创建MNE Raw对象"""
     # 获取放大器数据
-    data = rhd_data['amplifier_data']
+    data = rhd_data[0]['amplifier_data']
     
     # 获取通道信息
     ch_names = [chan['custom_channel_name'] or chan['native_channel_name'] 
-                for chan in rhd_data['amplifier_channels']]
+                for chan in rhd_data[0]['amplifier_channels']]
     
     # 设置通道类型
     ch_types = [config.DEFAULT_CHANNEL_TYPE] * len(ch_names)
@@ -126,18 +127,29 @@ def create_mne_raw_from_rhd_data(rhd_data):
     return raw
 
 
-def generate_events(rhd_data, paradigm_type, trial_number):
+def generate_events(root, subject_id, paradigm_type, trial_number):
     """生成事件文件"""
     events = []
     
     # 根据paradigm_type选择对应的triggers
     if paradigm_type in config.EVENTS_CONFIG:
-        for trigger_time in config.EVENTS_CONFIG[paradigm_type]['triggers']:
-            # 转换时间为样本索引
-            sample_idx = int(trigger_time * config.SAMPLING_RATE)
-            # 添加事件
-            events.append([sample_idx, 0, config.EVENT_IDS[paradigm_type]])
-    
+        # 判断是否是defined_in_config类型
+        if config.EVENTS_CONFIG[paradigm_type]['type'] == 'defined_in_config':
+            for trigger_time in config.EVENTS_CONFIG[paradigm_type][subject_id]:
+                # 转换时间为样本索引
+                sample_idx = int(trigger_time * config.SAMPLING_RATE)
+                # 添加事件
+                events.append([sample_idx, 0, config.EVENT_IDS[paradigm_type]])
+        # 其他类型的事件处理
+        elif config.EVENTS_CONFIG[paradigm_type]['type'] == 'extract_from_rhd':
+            # 利用rhd_event_extractor提取事件
+            trigger_times = extract_events_from_rhd_folder(root, config.EVENTS_CONFIG[paradigm_type]['digital_channel_index'], if_plot=False)
+            for trigger_time in trigger_times:
+                # 转换时间为样本索引
+                sample_idx = int(trigger_time * config.SAMPLING_RATE)
+                # 添加事件
+                events.append([sample_idx, 0, config.EVENT_IDS[paradigm_type]])
+                
     # 转换为MNE事件数组
     events_array = np.array(events, dtype=int)
     
@@ -178,11 +190,25 @@ def main():
             
             # 生成事件
             print("生成事件文件...")
-            events = generate_events(rhd_data, paradigm_type, trial_number)
+            events = generate_events(root, subject_id, paradigm_type, trial_number)
             
             # 创建输出目录
             output_dir = os.path.join(config.PROCESSED_DATA_DIR, subject_id)
             os.makedirs(output_dir, exist_ok=True)
+
+            # 创建visual_events目录
+            visual_events_dir = os.path.join(output_dir, 'visual_events')
+            os.makedirs(visual_events_dir, exist_ok=True)  # 确保目录存在
+            
+            visual_events_filename = f"events_{subject_id}_trial{trial_number}.txt"
+            visual_events_path = os.path.join(visual_events_dir, visual_events_filename)
+            
+            # 检查events是否为空
+            if len(events) > 0:
+                save_events_to_file(events, visual_events_path)
+            else:
+                print(f"警告: 未提取到任何事件，跳过保存visual_events文件")
+            save_events_to_file(events, visual_events_path)
             
             # 生成FIF文件名
             fif_filename = f"{subject_id}_{paradigm_type}_trial{trial_number}{config.FIF_FILE_SUFFIX}"
@@ -203,7 +229,7 @@ def main():
             
             # 保存事件文件
             print(f"保存事件文件到: {events_path}")
-            mne.write_events(events_path, events)
+            mne.write_events(events_path, events, overwrite=config.OVERWRITE_EXISTING)
             
             print(f"处理完成: {fif_path}")
             print("=" * 50)

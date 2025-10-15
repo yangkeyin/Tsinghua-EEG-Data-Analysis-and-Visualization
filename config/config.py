@@ -14,7 +14,7 @@ EPOCH_T_MAX = 1.5      # 切片时，事件后的结束时间 (秒)
 RAW_DATA_DIR = 'd:\\yangkeyin\\datasets\\251010清华数据分析\\acute'
 
 # 处理后的数据输出目录
-PROCESSED_DATA_DIR = 'd:\\yangkeyin\\datasets\\251010清华数据分析\\processed_data'
+PROCESSED_DATA_DIR = './data/fif_data'
 
 # ===================================================================
 # 3. 事件定义 (Event Definitions)
@@ -23,16 +23,22 @@ PROCESSED_DATA_DIR = 'd:\\yangkeyin\\datasets\\251010清华数据分析\\process
 # ===================================================================
 
 EVENTS_CONFIG = {
-    'visual': {        # 所有小鼠共用的触发时间点 (单位: 秒)
-        'triggers': [15.0, 30.0, 45.0, 60.0]
+    'visual': {        # 'type' 告诉主程序，这个范式的事件应该如何获取
+        'type': 'extract_from_rhd', 
+        # 可以指定用哪个数字通道，如果你的 extractor 支持的话
+        'digital_channel_index': 1 
     },
     'beard_slow': {
-        'start_time': 10.0,  # 慢刺激开始时间
-        'end_time': 50.0     # 慢刺激结束时间
+        'type': 'defined_in_config', # 显式声明这是在config里定义的
+        'mouse1': [60.0, 180.0, 300.0, 420.0, 540.0],  # 慢刺激触发时间点
+        'mouse2': [120.0, 240.0, 360.0, 480.0, 600.0],  # 慢刺激触发时间点
+        'mouse3': [120.0, 240.0, 360.0, 480.0, 600.0]  # 慢刺激触发时间点
     },
     'beard_fast': {
-        'start_time': 10.0,  # 快刺激开始时间
-        'end_time': 50.0     # 快刺激结束时间
+        'type': 'defined_in_config', # 显式声明这是在config里定义的
+        'mouse1': [60.0, 180.0, 300.0, 420.0, 540.0],  # 快刺激触发时间点
+        'mouse2': [180.0, 300.0, 420.0],  # 快刺激触发时间点
+        'mouse3': [120.0, 240.0, 360.0, 480.0, 600.0]  # 快刺激触发时间点
     }
 }
 

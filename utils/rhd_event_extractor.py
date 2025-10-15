@@ -30,7 +30,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.importrhdutilities import load_file
 
 
-def load_single_rhd_file(file_path):
+def load_single_rhd_file(file_path, digital_channel_index=1):
     """
     读取单个RHD文件并提取所需数据
     
@@ -54,10 +54,12 @@ def load_single_rhd_file(file_path):
             
         # 确保数字输入通道1存在
         if len(result0['board_dig_in_data']) < 2:
-            raise ValueError(f"文件 {file_path} 中缺少数字输入通道1")
+            print(f"文件 {file_path} 中缺少数字输入通道1")
+            print("尝试使用board_dig_in_data[0]通道数据")
+            digital_channel_index = 0
             
         # 提取数字输入通道1的数据和对应的时间戳
-        digital_data = result0['board_dig_in_data'][1]
+        digital_data = result0['board_dig_in_data'][digital_channel_index]
         time_data = result0['t_dig']
         
         return digital_data, time_data
@@ -67,7 +69,7 @@ def load_single_rhd_file(file_path):
         return None, None
 
 
-def concatenate_rhd_data(folder_path):
+def concatenate_rhd_data(folder_path, digital_channel_index=1):
     """
     读取文件夹下所有RHD文件并连接数据
     
@@ -76,7 +78,7 @@ def concatenate_rhd_data(folder_path):
         
     返回:
         tuple: (concatenated_digital, concatenated_time)，其中
-              concatenated_digital是所有文件board_dig_in_data[1]通道数据的连接结果
+              concatenated_digital是所有文件board_dig_in_data[digital_channel_index]通道数据的连接结果
               concatenated_time是所有文件t_dig时间戳数据的连接结果
     """
     # 获取文件夹下所有RHD文件
@@ -97,7 +99,7 @@ def concatenate_rhd_data(folder_path):
     for i, file_path in enumerate(rhd_files):
         print(f"正在读取文件 {i+1}/{len(rhd_files)}: {os.path.basename(file_path)}")
         
-        digital_data, time_data = load_single_rhd_file(file_path)
+        digital_data, time_data = load_single_rhd_file(file_path, digital_channel_index)
         
         if digital_data is None or time_data is None:
             print(f"跳过文件: {file_path}")
@@ -117,7 +119,7 @@ def concatenate_rhd_data(folder_path):
     return concatenated_digital, concatenated_time
 
 
-def detect_rising_edges(digital_data, time_data):
+def detect_events(digital_data, time_data):
     """
     检测数字信号的上升沿（从False变为True的转换点）
     
@@ -126,7 +128,7 @@ def detect_rising_edges(digital_data, time_data):
         time_data (ndarray): 对应的时间戳数据
         
     返回:
-        list: 包含所有上升沿事件时间戳的列表
+        list: 包含所有事件时间戳的列表
     """
     # 确保输入数据是布尔型
     if digital_data.dtype != bool:
@@ -136,17 +138,20 @@ def detect_rising_edges(digital_data, time_data):
     # 注意：我们需要将digital_data转换为int来计算差分
     diff = np.diff(digital_data.astype(int))
     
-    # 找到差分等于1的位置（上升沿）
-    rising_edge_indices = np.where(diff == 1)[0]
+    # 找到差分等于1的位置（下降沿）
+    edge_indices = np.where(diff != 0)
     
     # 获取对应的时间戳
     # 注意：差分后的索引比原始数据少1，所以我们需要+1来获取原始数据中的索引
-    event_times = [time_data[i+1] for i in rising_edge_indices]
+    edge_times = [time_data[i+1] for i in edge_indices]
+
+    # 根据差分结果来定位每个trial开始的索引（第一个trial和marker间距20,每个trial起始点间隔25s）
+    event_times = np.arange(edge_times[0][0] + 20, edge_times[0][-1]+1, 25) 
     
-    return event_times
+    return event_times, edge_times[0]
 
 
-def extract_events_from_rhd_folder(folder_path):
+def extract_events_from_rhd_folder(folder_path, digital_channel_index=1, if_plot=True):
     """
     从指定文件夹下的所有RHD文件中提取触发事件时间戳
     
@@ -159,16 +164,46 @@ def extract_events_from_rhd_folder(folder_path):
     print(f"开始从文件夹 {folder_path} 提取事件...")
     
     # 读取并连接所有RHD文件的数据
-    concatenated_digital, concatenated_time = concatenate_rhd_data(folder_path)
-    plt.plot(concatenated_time, concatenated_digital)
-    plt.show()
+    concatenated_digital, concatenated_time = concatenate_rhd_data(folder_path, digital_channel_index)
+    
     
     # 检测上升沿触发事件
-    event_times = detect_rising_edges(concatenated_digital, concatenated_time)
+    event_times, edge_times = detect_events(concatenated_digital, concatenated_time)
+
+
+    # 将上升沿触发时间记录在图的x轴上
+    if if_plot:
+        plot_rising_edges(folder_path, concatenated_time, concatenated_digital, event_times, edge_times)
     
     print(f"找到 {len(event_times)} 个触发事件")
     
     return event_times
+
+
+def plot_rising_edges(folder_path, time_data, digital_data, event_times, edge_times):
+    """
+    绘制数字信号和上升沿触发事件的图表
+    
+    参数:
+        folder_path (str): 文件夹路径，用于保存图表
+        time_data (ndarray): 时间戳数据
+        digital_data (ndarray): 数字信号数据
+        event_times (list): 上升沿触发事件时间戳列表
+    """
+    plt.figure(figsize=(12, 6))
+    plt.plot(time_data, digital_data, label='Digital Signal')
+    ax = plt.gca()
+    ax.set_xticks([round(t) for t in event_times])
+    ax.set_xticks([round(t) for t in edge_times],minor=True,labels=[round(t) for t in edge_times],color='red')
+    ax.legend()
+    ax.set_xlabel('Time (s)')
+    ax.set_ylabel('Digital Signal')
+    ax.set_title('Rising Edges of Digital Signal')
+    ax.text(0.95, 0.95, f"Total Events: {len(event_times)}", transform=ax.transAxes, 
+             ha='right', va='top', bbox=dict(facecolor='white', alpha=0.8))
+    ax.figure.savefig(os.path.join(folder_path, 'rising_edges.png'))
+    plt.show()
+    plt.close()
 
 
 def save_events_to_file(event_times, output_file):

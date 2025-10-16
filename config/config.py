@@ -152,3 +152,8 @@ REGION_COLORS = {
     'V1': 'purple',
     'V2': 'orange'
 }
+
+## 频谱图的默认频率范围 (Hz)
+TFR_FMIN = 0.5
+TFR_FMAX = 200.0
+STFT_WINDOW_SECONDS = 0.5

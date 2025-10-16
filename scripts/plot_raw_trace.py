@@ -26,6 +26,7 @@ TARGET_TRIAL = 1
 # 设置要显示的时间窗口 (单位: 秒)。如果想看全部，可以设为 None。
 PLOT_T_MIN = 20.0
 PLOT_T_MAX = 25.0  
+SCALE_AMPLITUDE = 1e-6 / 1e-6 # 根据自己的需求调节分母，比如如果是1mv，就为1e-3
 
 
 
@@ -64,7 +65,6 @@ def plot_raw_traces_by_region(ax, raw, region_map, hemisphere_name, fontsize=12)
 
     # 提取所有相关通道的数据来计算合适的偏移量
     all_data, times = raw.get_data(picks=all_ch_names, return_times=True)
-    all_data *= SCALE_AMPLITUDE # 转换为 µV
     
     # 基于数据的峰峰值范围来确定一个合理的偏移量
     offset_step = np.percentile(all_data.max(axis=1) - all_data.min(axis=1), 95) * 1.5
@@ -84,8 +84,8 @@ def plot_raw_traces_by_region(ax, raw, region_map, hemisphere_name, fontsize=12)
             if ch_name in raw.ch_names:
                 # 获取单个通道的数据
                 channel_data, times = raw.get_data(picks=[ch_name], return_times=True)
-                channel_data *= 1e6 # 转换为 µV
                 
+                channel_data *= SCALE_AMPLITUDE # 进行转换
                 # 计算偏移量并添加向上的垂直偏移
                 offset = channel_counter * -offset_step
                 ax.plot(times, channel_data[0] + offset, color=color, linewidth=2.0)
@@ -162,8 +162,8 @@ def main():
     # 绘制水平虚线
     fig.add_artist(lines.Line2D([0.98, 0.935], [0.05, 0.05], 
             color='black', linewidth=2, transform=fig.transFigure))
-    fig.text(0.92, 0.05, '5s', transform=fig.transFigure, fontsize=15)
-    fig.text(0.96, 0.03, '1.5uv', transform=fig.transFigure, fontsize=15)
+    fig.text(0.92, 0.05, '0.5s', transform=fig.transFigure, fontsize=15)
+    fig.text(0.96, 0.03, f'5mv', transform=fig.transFigure, fontsize=15)
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 

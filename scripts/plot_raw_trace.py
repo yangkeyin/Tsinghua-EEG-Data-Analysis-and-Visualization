@@ -7,6 +7,7 @@ import os
 import mne
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.lines as lines
 
 # 导入配置
 # (优化路径，确保无论从哪里运行都能找到config)
@@ -23,12 +24,12 @@ TARGET_PARADIGM = 'visual'
 TARGET_TRIAL = 1
 
 # 设置要显示的时间窗口 (单位: 秒)。如果想看全部，可以设为 None。
-PLOT_T_MIN = 10.0
-PLOT_T_MAX = 15.0  # 例如，显示从第10秒到第15秒，共5秒的数据
-# ===================================================================
+PLOT_T_MIN = 20.0
+PLOT_T_MAX = 25.0  
 
 
-def plot_raw_traces_by_region(ax, raw, region_map, hemisphere_name):
+
+def plot_raw_traces_by_region(ax, raw, region_map, hemisphere_name, fontsize=12):
     """
     在给定的轴上按脑区堆叠绘制Raw数据轨迹。
 
@@ -38,7 +39,7 @@ def plot_raw_traces_by_region(ax, raw, region_map, hemisphere_name):
         region_map (dict): 单个半球的脑区通道映射.
         hemisphere_name (str): 半球名称 ('Left' or 'Right').
     """
-    ax.set_title(hemisphere_name, fontsize=14)
+    ax.set_title(hemisphere_name, fontsize=fontsize)
     
     y_ticks = []
     y_labels = []
@@ -63,7 +64,7 @@ def plot_raw_traces_by_region(ax, raw, region_map, hemisphere_name):
 
     # 提取所有相关通道的数据来计算合适的偏移量
     all_data, times = raw.get_data(picks=all_ch_names, return_times=True)
-    all_data *= 1e6 # 转换为 µV
+    all_data *= SCALE_AMPLITUDE # 转换为 µV
     
     # 基于数据的峰峰值范围来确定一个合理的偏移量
     offset_step = np.percentile(all_data.max(axis=1) - all_data.min(axis=1), 95) * 1.5
@@ -79,28 +80,38 @@ def plot_raw_traces_by_region(ax, raw, region_map, hemisphere_name):
 
         y_ticks.append(channel_counter * -offset_step)
         y_labels.append(f"{region}")
-        
         for ch_name in ch_names:
             if ch_name in raw.ch_names:
                 # 获取单个通道的数据
                 channel_data, times = raw.get_data(picks=[ch_name], return_times=True)
                 channel_data *= 1e6 # 转换为 µV
                 
-                # 计算偏移量并绘制
+                # 计算偏移量并添加向上的垂直偏移
                 offset = channel_counter * -offset_step
-                ax.plot(times, channel_data[0] + offset, color=color, linewidth=1.0)
+                ax.plot(times, channel_data[0] + offset, color=color, linewidth=2.0)
                 
                 channel_counter += 1
 
     ax.set_yticks(y_ticks)
     ax.set_yticklabels(y_labels)
-    ax.set_xlim(times[0], times[-1])
-    ax.set_xlabel("Time (s)", fontsize=12)
-    ax.grid(True, linestyle=':', alpha=0.6, axis='x')
+    # ax.set_xlim(times[0], times[-1])
+    # ax.set_xlabel("Time (s)", fontsize=12)
+    # ax.grid(True, linestyle=':', alpha=0.6, axis='x')
+
+    # --- 隐藏边框和Y轴刻度线 ---
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    # 隐藏X轴刻度标签和刻度
+    ax.set_xticklabels([]) # 移除X轴刻度标签
+    ax.set_xticks([]) # 移除X轴刻度
     
-    # 在第一个子图上设置Y轴标签
-    if 'Left' in hemisphere_name:
-        ax.set_ylabel("Channels", fontsize=12)
+    # # 在第一个子图上设置Y轴标签
+    # if 'Left' in hemisphere_name:
+    #     ax.set_ylabel("Channels", fontsize=12)
+        
+        
 
 
 def main():
@@ -132,13 +143,27 @@ def main():
     # 4. 创建绘图画布
     fig, axes = plt.subplots(1, 2, figsize=(22, 12))
     fig.suptitle(f"Raw Trace: {TARGET_SUBJECT} - {TARGET_PARADIGM} - Trial {TARGET_TRIAL}", fontsize=18, y=0.98)
+    fig.patch
 
     # 5. 绘制左右脑
     print("正在绘制左半球...")
-    plot_raw_traces_by_region(axes[0], raw, config.REGION_MAP['Left'], 'Left Hemisphere')
+    plot_raw_traces_by_region(axes[0], raw, config.REGION_MAP['Left'], 'Left', fontsize=20)
     
     print("正在绘制右半球...")
-    plot_raw_traces_by_region(axes[1], raw, config.REGION_MAP['Right'], 'Right Hemisphere')
+    plot_raw_traces_by_region(axes[1], raw, config.REGION_MAP['Right'], 'Right', fontsize=20)
+
+    # 修改main函数中的图形布局部分
+    # 在保存图像前添加以下代码，确保两个子图大小一致
+    fig.subplots_adjust(wspace=0.3)  # 调整子图间距
+    # 在右下角绘制时间和振幅尺度
+    # 绘制垂直虚线
+    fig.add_artist(lines.Line2D([0.98, 0.98], [0.05, 0.1], 
+            color='black', linewidth=2, transform=fig.transFigure))
+    # 绘制水平虚线
+    fig.add_artist(lines.Line2D([0.98, 0.935], [0.05, 0.05], 
+            color='black', linewidth=2, transform=fig.transFigure))
+    fig.text(0.92, 0.05, '5s', transform=fig.transFigure, fontsize=15)
+    fig.text(0.96, 0.03, '1.5uv', transform=fig.transFigure, fontsize=15)
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 

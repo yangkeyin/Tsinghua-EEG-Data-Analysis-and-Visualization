@@ -47,7 +47,7 @@ SUBJECT_MAPPING = {
 RHD_FILE_EXTENSION = '.rhd'  # 原始数据文件后缀
 FIF_FILE_SUFFIX = '_raw.fif'  # 输出FIF文件后缀
 EVENTS_FILE_SUFFIX = '_events.tsv'  # 输出事件文件后缀
-CHANNEL_PREFIX = 'C-'  # 通道名称前缀
+CHANNEL_PREFIX = ['C-', 'A-']  # 通道名称前缀
 
 # ===================================================================
 # 4. 数据处理设置 (Data Processing Settings)
@@ -128,20 +128,20 @@ REGION_COLORS = {
 # ===================================================================
 
 # 目标数据设置 (可在脚本中覆盖)
-TARGET_SUBJECT = 'mouse1'    # 目标被试
+TARGET_SUBJECT = 'mouse3'    # 目标被试
 TARGET_PARADIGM = 'visual'   # 目标范式
-TARGET_TRIAL = 1             # 目标试次
+TARGET_TRIAL = 2             # 目标试次
 
 # 通用时间窗口设置 (可在脚本中覆盖)
-PLOT_T_MIN = 20.0  # 默认绘图起始时间 (秒)
-PLOT_T_MAX = 25.0  # 默认绘图结束时间 (秒)
+PLOT_T_MIN = 30.0  # 默认绘图起始时间 (秒)
+PLOT_T_MAX = 40.0  # 默认绘图结束时间 (秒)
 
 # ===================================================================
 # 8. 原始轨迹图设置 (Raw Trace Plotting Settings)
 # ===================================================================
 
 # 振幅缩放因子 (用于将数据转换为微伏)
-SCALE_AMPLITUDE = 1e-6 / 1e-6  # 可根据数据单位调整分母
+SCALE_AMPLITUDE = 5e-3 / 2e-3  # 可根据数据单位调整分母, 1e-3表示MV
 
 # ===================================================================
 # 9. 频谱图设置 (Spectrogram Plotting Settings)

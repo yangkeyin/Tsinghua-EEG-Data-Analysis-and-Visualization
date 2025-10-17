@@ -110,7 +110,7 @@ def calculate_all_channels_stft(raw):
     return db_data, freqs, stft_times
 
 
-def plot_spectrogram_by_region(db_data, freqs, times, ch_names_ordered, title):
+def plot_spectrogram_by_region(db_data, freqs, times, ch_names_ordered, title, channel_prefix='C-'):
     """
     将所有通道的时频谱图按照脑区布局绘制到4列网格中。
 
@@ -134,7 +134,7 @@ def plot_spectrogram_by_region(db_data, freqs, times, ch_names_ordered, title):
     for region, channels in config.REGION_MAP['Left'].items():
         region_chans = []
         for ch_num in channels:
-            ch_name = f"{config.CHANNEL_PREFIX}{ch_num:03d}"
+            ch_name = f"{channel_prefix}{ch_num:03d}"
             if ch_name in ch_name_to_idx:
                 region_chans.append(ch_name)
         left_chans_by_region[region] = region_chans
@@ -143,7 +143,7 @@ def plot_spectrogram_by_region(db_data, freqs, times, ch_names_ordered, title):
     for region, channels in config.REGION_MAP['Right'].items():
         region_chans = []
         for ch_num in channels:
-            ch_name = f"{config.CHANNEL_PREFIX}{ch_num:03d}"
+            ch_name = f"{channel_prefix}{ch_num:03d}"
             if ch_name in ch_name_to_idx:
                 region_chans.append(ch_name)
         right_chans_by_region[region] = region_chans
@@ -240,6 +240,8 @@ def plot_spectrogram_by_region(db_data, freqs, times, ch_names_ordered, title):
 def main():
     """主函数，执行整个流程"""
     raw = load_and_prepare_raw(config.TARGET_SUBJECT, config.TARGET_PARADIGM, config.TARGET_TRIAL, config.PLOT_T_MIN, config.PLOT_T_MAX)
+    # 提取通道前缀
+    channel_prefix = raw.ch_names[0][:2]
     
     if raw is None:
         return
@@ -249,7 +251,7 @@ def main():
     # 创建图像总标题
     title = f"Spectrograms: {config.TARGET_SUBJECT} - {config.TARGET_PARADIGM} - Trial {config.TARGET_TRIAL}"
     
-    fig = plot_spectrogram_by_region(db_data, freqs, times, raw.ch_names, title)
+    fig = plot_spectrogram_by_region(db_data, freqs, times, raw.ch_names, title, channel_prefix=channel_prefix)
 
     # 保存图像
     os.makedirs(config.PLOTS_DIR, exist_ok=True)

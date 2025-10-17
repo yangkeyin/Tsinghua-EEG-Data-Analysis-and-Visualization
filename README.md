@@ -65,10 +65,7 @@
 2.  **被试与文件命名 (`Subject & File Naming`)**:
     * `SUBJECT_MAPPING`: **（必须修改）** 将您的 `<日期文件夹>` 名称映射到唯一的被试ID（例如 `'20250612': 'mouse1'`）。
 
-3.  **脑区映射 (`Brain Region Mapping`)**:
-    * `REGION_MAP`: **（必须修改）** 根据您的电极植入方案，将每个脑区（`M2`, `M1`等）与对应的通道编号进行准确映射。
-
-4.  **数据处理设置 (`Data Processing Settings`)**:
+3.  **数据处理设置 (`Data Processing Settings`)**:
     * `NOTCH_FREQS`, `BANDPASS_L_FREQ`, `BANDPASS_H_FREQ`, `RESAMPLE_FREQ`: 检查这些预处理参数是否符合您的分析需求。
 
 ### 步骤 2: 运行数据预处理

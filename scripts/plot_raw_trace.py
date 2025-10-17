@@ -16,19 +16,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import config.config as config
 
 
-# ===================================================================
-# 在这里精确指定你要绘制的单个目标
-# ===================================================================
-TARGET_SUBJECT = 'mouse1'
-TARGET_PARADIGM = 'visual'
-TARGET_TRIAL = 1
-
-# 设置要显示的时间窗口 (单位: 秒)。如果想看全部，可以设为 None。
-PLOT_T_MIN = 20.0
-PLOT_T_MAX = 25.0  
-SCALE_AMPLITUDE = 1e-6 / 1e-6 # 根据自己的需求调节分母，比如如果是1mv，就为1e-3
-
-
 
 def plot_raw_traces_by_region(ax, raw, region_map, hemisphere_name, fontsize=12):
     """
@@ -85,7 +72,7 @@ def plot_raw_traces_by_region(ax, raw, region_map, hemisphere_name, fontsize=12)
                 # 获取单个通道的数据
                 channel_data, times = raw.get_data(picks=[ch_name], return_times=True)
                 
-                channel_data *= SCALE_AMPLITUDE # 进行转换
+                channel_data *= config.SCALE_AMPLITUDE # 进行转换
                 # 计算偏移量并添加向上的垂直偏移
                 offset = channel_counter * -offset_step
                 ax.plot(times, channel_data[0] + offset, color=color, linewidth=2.0)
@@ -116,11 +103,11 @@ def plot_raw_traces_by_region(ax, raw, region_map, hemisphere_name, fontsize=12)
 
 def main():
     """主函数"""
-    print(f"--- 绘制 Raw Trace: 被试 {TARGET_SUBJECT}, 范式 {TARGET_PARADIGM}, Trial {TARGET_TRIAL} ---")
+    print(f"--- 绘制 Raw Trace: 被试 {config.TARGET_SUBJECT}, 范式 {config.TARGET_PARADIGM}, Trial {config.TARGET_TRIAL} ---")
 
     # 1. 精确构建文件路径
-    paradigm_dir = os.path.join(config.PROCESSED_DATA_DIR, TARGET_SUBJECT)
-    fif_filename = f"{TARGET_SUBJECT}_{TARGET_PARADIGM}_trial{TARGET_TRIAL}{config.FIF_FILE_SUFFIX}"
+    paradigm_dir = os.path.join(config.PROCESSED_DATA_DIR, config.TARGET_SUBJECT)
+    fif_filename = f"{config.TARGET_SUBJECT}_{config.TARGET_PARADIGM}_trial{config.TARGET_TRIAL}{config.FIF_FILE_SUFFIX}"
     fif_path = os.path.join(paradigm_dir, fif_filename)
 
     if not os.path.exists(fif_path):
@@ -132,17 +119,17 @@ def main():
     raw = mne.io.read_raw_fif(fif_path, preload=True, verbose=False)
 
     # 3. （可选）截取时间段
-    if PLOT_T_MIN is not None and PLOT_T_MAX is not None:
-        print(f"截取时间窗口: {PLOT_T_MIN}s - {PLOT_T_MAX}s")
+    if config.PLOT_T_MIN is not None and config.PLOT_T_MAX is not None:
+        print(f"截取时间窗口: {config.PLOT_T_MIN}s - {config.PLOT_T_MAX}s")
         try:
-            raw.crop(tmin=PLOT_T_MIN, tmax=PLOT_T_MAX)
+            raw.crop(tmin=config.PLOT_T_MIN, tmax=config.PLOT_T_MAX)
         except ValueError as e:
             print(f"警告: 无法截取时间窗口。可能设置的时间超出了数据范围 ({raw.times[-1]:.2f}s)。将显示全部数据。错误: {e}")
 
 
     # 4. 创建绘图画布
     fig, axes = plt.subplots(1, 2, figsize=(22, 12))
-    fig.suptitle(f"Raw Trace: {TARGET_SUBJECT} - {TARGET_PARADIGM} - Trial {TARGET_TRIAL}", fontsize=18, y=0.98)
+    fig.suptitle(f"Raw Trace: {config.TARGET_SUBJECT} - {config.TARGET_PARADIGM} - Trial {config.TARGET_TRIAL}", fontsize=18, y=0.98)
     fig.patch
 
     # 5. 绘制左右脑
@@ -160,7 +147,7 @@ def main():
     fig.add_artist(lines.Line2D([0.98, 0.98], [0.05, 0.1], 
             color='black', linewidth=2, transform=fig.transFigure))
     # 绘制水平虚线
-    fig.add_artist(lines.Line2D([0.98, 0.935], [0.05, 0.05], 
+    fig.add_artist(lines.Line2D([0.98, 0.94], [0.05, 0.05], 
             color='black', linewidth=2, transform=fig.transFigure))
     fig.text(0.92, 0.05, '0.5s', transform=fig.transFigure, fontsize=15)
     fig.text(0.96, 0.03, f'5mv', transform=fig.transFigure, fontsize=15)
@@ -169,7 +156,7 @@ def main():
 
     # 6. 保存图像
     os.makedirs(config.PLOTS_DIR, exist_ok=True)
-    output_filename = f"{TARGET_SUBJECT}_{TARGET_PARADIGM}_trial{TARGET_TRIAL}_raw_trace.png"
+    output_filename = f"{config.TARGET_SUBJECT}_{config.TARGET_PARADIGM}_trial{config.TARGET_TRIAL}_raw_trace.png"
     output_path = os.path.join(config.PLOTS_DIR, output_filename)
     print(f"保存图像到: {output_path}")
     fig.savefig(output_path, dpi=300)

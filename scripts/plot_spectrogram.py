@@ -22,18 +22,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import config.config as config
 
 
-# ===================================================================
-# 在这里精确指定你要绘制的单个目标
-# ===================================================================
-TARGET_SUBJECT = 'mouse1'
-TARGET_PARADIGM = 'visual'
-TARGET_TRIAL = 1
-
-# 设置要显示的时间窗口 (单位: 秒)
-PLOT_T_MIN = 20.0
-PLOT_T_MAX = 25.0
-# ===================================================================
-
 
 def load_and_prepare_raw(subject, paradigm, trial, tmin, tmax):
     """
@@ -52,8 +40,8 @@ def load_and_prepare_raw(subject, paradigm, trial, tmin, tmax):
     print(f"--- 正在加载数据: {subject}, {paradigm}, Trial {trial} ---")
     
     # 构建文件路径
-    paradigm_dir = os.path.join(config.PROCESSED_DATA_DIR, TARGET_SUBJECT)
-    fif_filename = f"{TARGET_SUBJECT}_{TARGET_PARADIGM}_trial{TARGET_TRIAL}{config.FIF_FILE_SUFFIX}"
+    paradigm_dir = os.path.join(config.PROCESSED_DATA_DIR, config.TARGET_SUBJECT)
+    fif_filename = f"{config.TARGET_SUBJECT}_{config.TARGET_PARADIGM}_trial{config.TARGET_TRIAL}{config.FIF_FILE_SUFFIX}"
     fif_path = os.path.join(paradigm_dir, fif_filename)
 
     if not os.path.exists(fif_path):
@@ -251,7 +239,7 @@ def plot_spectrogram_by_region(db_data, freqs, times, ch_names_ordered, title):
 
 def main():
     """主函数，执行整个流程"""
-    raw = load_and_prepare_raw(TARGET_SUBJECT, TARGET_PARADIGM, TARGET_TRIAL, PLOT_T_MIN, PLOT_T_MAX)
+    raw = load_and_prepare_raw(config.TARGET_SUBJECT, config.TARGET_PARADIGM, config.TARGET_TRIAL, config.PLOT_T_MIN, config.PLOT_T_MAX)
     
     if raw is None:
         return
@@ -259,13 +247,13 @@ def main():
     db_data, freqs, times = calculate_all_channels_stft(raw)
     
     # 创建图像总标题
-    title = f"Spectrograms: {TARGET_SUBJECT} - {TARGET_PARADIGM} - Trial {TARGET_TRIAL}"
+    title = f"Spectrograms: {config.TARGET_SUBJECT} - {config.TARGET_PARADIGM} - Trial {config.TARGET_TRIAL}"
     
     fig = plot_spectrogram_by_region(db_data, freqs, times, raw.ch_names, title)
 
     # 保存图像
     os.makedirs(config.PLOTS_DIR, exist_ok=True)
-    output_filename = f"{TARGET_SUBJECT}_{TARGET_PARADIGM}_trial{TARGET_TRIAL}_spectrogram_grid.png"
+    output_filename = f"{config.TARGET_SUBJECT}_{config.TARGET_PARADIGM}_trial{config.TARGET_TRIAL}_spectrogram_grid.png"
     output_path = os.path.join(config.PLOTS_DIR, output_filename)
     print(f"保存图像到: {output_path}")
     fig.savefig(output_path, dpi=300)

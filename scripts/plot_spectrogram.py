@@ -1,5 +1,3 @@
-# scripts/plot_spectrogram_grid.py
-
 """
 批量绘制多通道时频谱图脚本
 

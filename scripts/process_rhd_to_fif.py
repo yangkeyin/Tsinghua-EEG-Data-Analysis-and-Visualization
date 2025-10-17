@@ -1,3 +1,13 @@
+'''
+此文件主要用于处理RHD格式的脑电数据，将其转换为MNE可处理的FIF格式文件。具体功能如下：
+1. 从RHD文件中提取事件信息并转换为MNE事件数组
+2. 在创建FIF数据前对数据进行预处理，包括陷波滤波、带通滤波、共模去噪和降采样
+3. 将处理后的数据保存为FIF文件，同时保存对应的事件文件
+
+此外，程序会从文件夹名称中提取被试ID、范式类型和试次编号，支持多个RHD文件的合并操作，
+并能根据配置生成不同类型的事件文件。
+'''
+
 import os
 import sys
 from mne.io import Raw
@@ -19,19 +29,6 @@ from preprocess import preprocess
 # 导入配置
 import config as config
 
-'''
-总功能：
-    1. 从RHD文件中提取事件
-    2. 转换为MNE事件数组
-    3. 保存事件文件
-
-251015：
-    在创建fif数据之前先预处理：
-        1. 陷波（50，100，150）
-        2. 带通滤波（0.5-200）
-        3. 共模去噪
-        4. 降采样（500Hz）
-'''
 
 
 def get_subject_id_from_folder(folder_name):

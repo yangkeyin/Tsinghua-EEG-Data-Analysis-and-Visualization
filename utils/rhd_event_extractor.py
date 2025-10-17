@@ -1,21 +1,12 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-RHD事件提取器
-
-该脚本用于读取指定文件夹下的所有RHD文件，提取数字输入通道数据和对应的时间戳，并识别触发事件点。
-
-实现步骤：
-1. 遍历指定文件夹下所有扩展名为.rhd的文件
-2. 对每个RHD文件，使用importrhdutilities.load_file()函数读取数据
-3. 提取每个文件中的board_dig_in_data[1]通道数据和t_dig时间戳
-4. 将所有文件的数据按顺序连接起来
-5. 分析数字输入通道的状态变化，识别从False变为True的转换点（上升沿）
-6. 返回这些触发事件对应的时间戳列表
-
-使用方法：
-    from utils.rhd_event_extractor import extract_events_from_rhd_folder
-    events = extract_events_from_rhd_folder('path/to/rhd/files')
+# 此文件实现了从RHD文件中读取、处理并提取触发事件时间戳的功能。主要包含以下几个模块：
+# 1. 单个RHD文件的读取和数据提取（load_single_rhd_file）
+# 2. 文件夹下所有RHD文件的数据连接（concatenate_rhd_data）
+# 3. 数字信号上升沿事件的检测（detect_events）
+# 4. 从文件夹提取事件并可选择绘制图表（extract_events_from_rhd_folder）
+# 5. 绘制数字信号和上升沿事件的图表（plot_rising_edges）
+# 6. 将事件时间戳保存到文件（save_events_to_file）
+# 程序主入口可指定文件夹路径和输出文件路径，完成事件提取、保存和打印操作。
 """
 
 import os

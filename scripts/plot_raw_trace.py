@@ -117,6 +117,15 @@ def main():
     # 2. 加载Raw数据
     print(f"加载文件: {fif_path}")
     raw = mne.io.read_raw_fif(fif_path, preload=True, verbose=False)
+
+    # 降采样
+    resample_freq = config.RESAMPLE_FREQ
+    if resample_freq and raw.info['sfreq'] > resample_freq:
+        print(f"降采样至 {resample_freq} Hz...")
+        # 在降采样之前加载数据到内存是推荐做法
+        raw.load_data(verbose=config.VERBOSE)
+        raw.resample(sfreq=resample_freq, verbose=config.VERBOSE)
+    
     # 提取通道前缀
     channel_prefix = raw.ch_names[0][:2]
 

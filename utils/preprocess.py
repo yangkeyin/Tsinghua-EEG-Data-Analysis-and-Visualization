@@ -31,12 +31,12 @@ def preprocess(raw):
     raw.set_eeg_reference('average', verbose=config.VERBOSE)
 
     # 4. 降采样
-    resample_freq = config.RESAMPLE_FREQ
-    if resample_freq and raw.info['sfreq'] > resample_freq:
-        print(f"降采样至 {resample_freq} Hz...")
-        # 在降采样之前加载数据到内存是推荐做法
-        raw.load_data(verbose=config.VERBOSE)
-        raw.resample(sfreq=resample_freq, verbose=config.VERBOSE)
+    # resample_freq = config.RESAMPLE_FREQ
+    # if resample_freq and raw.info['sfreq'] > resample_freq:
+    #     print(f"降采样至 {resample_freq} Hz...")
+    #     # 在降采样之前加载数据到内存是推荐做法
+    #     raw.load_data(verbose=config.VERBOSE)
+    #     raw.resample(sfreq=resample_freq, verbose=config.VERBOSE)
     
     print("="*15, "预处理完成", "="*15)
     return raw

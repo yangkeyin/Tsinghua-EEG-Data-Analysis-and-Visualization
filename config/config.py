@@ -12,8 +12,11 @@ SAMPLING_RATE = 20000  # 原始采样率 (Hz)
 RESAMPLE_FREQ = 500    # 降采样频率 (Hz)
 
 # 数据切片设置
-EPOCH_T_MIN = -0.5     # 切片时，事件前的开始时间 (秒)
-EPOCH_T_MAX = 1.5      # 切片时，事件后的结束时间 (秒)
+EPOCH_T_MIN = -2.     # 切片时，事件前的开始时间 (秒)
+EPOCH_T_MAX = 5.      # 切片时，事件后的结束时间 (秒)
+REST_T_BEFORE = -5.     # 切片时，Rest状态前的开始时间 (秒)
+
+
 
 # 处理控制设置
 OVERWRITE_EXISTING = True  # 是否覆盖已存在的文件
@@ -28,6 +31,9 @@ RAW_DATA_DIR = 'd:\\yangkeyin\\datasets\\251010清华数据分析\\acute'
 
 # 处理后的数据输出目录
 PROCESSED_DATA_DIR = './data/fif_data'
+
+#epoch数据输出目录
+EPOCHS_DIR = './data/epoch'
 
 # 绘图输出目录
 PLOTS_DIR = './data/plots'
@@ -87,10 +93,13 @@ EVENTS_CONFIG = {
 
 # MNE事件ID映射 (用于区分不同事件)
 EVENT_IDS = {
+    'rest': 0,
     'visual': 1,
     'beard_slow': 2,
     'beard_fast': 3
 }
+
+REFERENCE_EVENT_FOR_REST = 'visual'  # 参考事件用于Rest状态切片
 
 # ===================================================================
 # 6. 脑区映射设置 (Brain Region Mapping)
@@ -154,3 +163,13 @@ STFT_TIME_STEP = 64     # STFT时间步长 (通常为窗口大小的一半)
 # 频率范围设置
 TFR_FMIN = 0.5    # 感兴趣的最低频率 (Hz)
 TFR_FMAX = 200.0  # 感兴趣的最高频率 (Hz)
+
+## 10. 时频图设置 (Time-Frequency Plotting Settings)
+FREQUENCY_BANDS = {
+    'delta': (1, 4),
+    'theta': (4, 8),
+    'alpha': (8, 13),
+    'beta': (13, 30),
+    'gamma1': (30, 70),
+    'gamma2': (70, 120)
+}

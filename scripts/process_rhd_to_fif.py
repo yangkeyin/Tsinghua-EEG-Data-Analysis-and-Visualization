@@ -1,7 +1,7 @@
 '''
 此文件主要用于处理RHD格式的脑电数据，将其转换为MNE可处理的FIF格式文件。具体功能如下：
 1. 从RHD文件中提取事件信息并转换为MNE事件数组
-2. 在创建FIF数据前对数据进行预处理，包括陷波滤波、带通滤波、共模去噪和降采样
+2. 在创建FIF数据前对数据进行预处理，包括陷波滤波、带通滤波、共模去噪
 3. 将处理后的数据保存为FIF文件，同时保存对应的事件文件
 
 此外，程序会从文件夹名称中提取被试ID、范式类型和试次编号，支持多个RHD文件的合并操作，
@@ -85,7 +85,7 @@ def merge_rhd_files(rhd_files):
         return None
         
     # 读取第一个文件，获取头部信息
-    result = load_file(rhd_files[0])
+    result = load_file(rhd_files[0])[0]
     
     # 如果只有一个文件，直接返回
     if len(rhd_files) == 1:
@@ -93,7 +93,7 @@ def merge_rhd_files(rhd_files):
         
     # 合并多个文件的数据
     for file_path in rhd_files[1:]:
-        next_result = load_file(file_path)
+        next_result = load_file(file_path)[0]
         
         # 合并放大器数据
         if 'amplifier_data' in result and 'amplifier_data' in next_result:
@@ -120,11 +120,11 @@ def merge_rhd_files(rhd_files):
 def create_mne_raw_from_rhd_data(rhd_data):
     """从RHD数据创建MNE Raw对象"""
     # 获取放大器数据
-    data = rhd_data[0]['amplifier_data']
+    data = rhd_data['amplifier_data']
     
     # 获取通道信息
     ch_names = [chan['custom_channel_name'] or chan['native_channel_name'] 
-                for chan in rhd_data[0]['amplifier_channels']]
+                for chan in rhd_data['amplifier_channels']]
     
     # 设置通道类型
     ch_types = [config.DEFAULT_CHANNEL_TYPE] * len(ch_names)
@@ -202,6 +202,10 @@ def main():
             print("创建MNE Raw对象...")
             raw = create_mne_raw_from_rhd_data(rhd_data)
 
+            # 重命名通道
+            print("重命名通道...")
+            raw.rename_channels(lambda x: x.replace('A-', 'C-'))
+            
             # 预处理
             print("预处理数据...")
             raw_processed = preprocess(raw)

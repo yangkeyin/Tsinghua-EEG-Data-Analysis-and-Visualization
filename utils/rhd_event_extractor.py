@@ -221,7 +221,7 @@ def save_events_to_file(event_times, output_file):
 
 if __name__ == '__main__':
     # 定义默认的文件夹路径和输出文件路径
-    FOLDER_PATH = r'd:\yangkeyin\datasets\251010清华数据分析\acute\20250612\visual\visual_250613_162743'
+    FOLDER_PATH = r'D:\yangkeyin\datasets\251010清华数据分析\acute\20250612\visual\visual_250613_165715'
     OUTPUT_FILE = 'rhd_events.txt'
     
     try:

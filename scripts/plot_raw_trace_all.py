@@ -1,7 +1,7 @@
 """
-# 此文件用于绘制原始脑电数据轨迹，按脑区和半球进行可视化展示。
-# 程序会根据配置文件中的设置，加载指定被试、范式和试验的EEG数据，
-# 并在指定时间窗口内绘制左右半球各脑区的原始信号轨迹，最后保存图像。
+# 此文件用于“批量”绘制原始脑电数据轨迹
+# 根据配置文件指定的被试、范式和试次，加载EEG数据后，
+# 在设定“时间窗”内绘制左右半球各脑区原始波形，并导出图像。
 """
 import os
 import mne
@@ -128,52 +128,66 @@ def main():
     
     # 提取通道前缀
     channel_prefix = raw.ch_names[0][:2]
-
-    # 3. （可选）截取时间段
-    if config.PLOT_T_MIN is not None and config.PLOT_T_MAX is not None:
-        print(f"截取时间窗口: {config.PLOT_T_MIN}s - {config.PLOT_T_MAX}s")
-        try:
-            raw.crop(tmin=config.PLOT_T_MIN, tmax=config.PLOT_T_MAX)
-        except ValueError as e:
-            print(f"警告: 无法截取时间窗口。可能设置的时间超出了数据范围 ({raw.times[-1]:.2f}s)。将显示全部数据。错误: {e}")
-
-
-    # 4. 创建绘图画布
-    fig, axes = plt.subplots(1, 2, figsize=(22, 12))
-    fig.suptitle(f"Raw Trace: {config.TARGET_SUBJECT} - {config.TARGET_PARADIGM} - Trial {config.TARGET_TRIAL} ({config.PLOT_T_MIN:.2f}s - {config.PLOT_T_MAX:.2f}s)", fontsize=18, y=0.98)
-    fig.patch
-
-    # 5. 绘制左右脑
-    print("正在绘制左半球...")
-    plot_raw_traces_by_region(axes[0], raw, config.REGION_MAP['Left'], 'Left', fontsize=20, channel_prefix=channel_prefix)
     
-    print("正在绘制右半球...")
-    plot_raw_traces_by_region(axes[1], raw, config.REGION_MAP['Right'], 'Right', fontsize=20, channel_prefix=channel_prefix)
+    # ---批量绘制原始轨迹图---
+    # 为每个被试每个范式每个试次创建一个文件夹
+    output_dir = os.path.join(config.PLOTS_DIR, f'{config.TARGET_SUBJECT}_{config.TARGET_PARADIGM}_trial{config.TARGET_TRIAL}')
+    os.makedirs(output_dir, exist_ok=True)
+    # 计算需要绘制的时间窗口数量
+    num_windows = int(np.ceil((config.PLOT_T_MAX - config.PLOT_T_MIN) / config.PLOT_WINDOW_SIZE))
+    for window_idx in range(num_windows):
+        t_min = config.PLOT_T_MIN + window_idx * config.PLOT_WINDOW_SIZE
+        t_max = min(t_min + config.PLOT_WINDOW_SIZE, config.PLOT_T_MAX)
+    
+        # 3. （可选）截取时间段
+        if t_min is not None and t_max is not None:
+            print(f"截取时间窗口: {t_min}s - {t_max}s")
+            try:
+                raw_cropped = raw.copy().crop(tmin=t_min, tmax=t_max)
+            except ValueError as e:
+                print(f"错误: 无法截取时间窗口。可能设置的时间超出了数据范围 ({raw.times[-1]:.2f}s)。程序终止。错误: {e}")
+                # 终止程序
+                sys.exit(1)
 
-    # 修改main函数中的图形布局部分
-    # 在保存图像前添加以下代码，确保两个子图大小一致
-    fig.subplots_adjust(wspace=0.3)  # 调整子图间距
-    # 在右下角绘制时间和振幅尺度
-    # 绘制垂直虚线
-    fig.add_artist(lines.Line2D([0.98, 0.98], [0.05, 0.1], 
-            color='black', linewidth=2, transform=fig.transFigure))
-    # 绘制水平虚线
-    fig.add_artist(lines.Line2D([0.98, 0.94], [0.05, 0.05], 
-            color='black', linewidth=2, transform=fig.transFigure))
-    fig.text(0.92, 0.05, f'{int(500 * (5 / (config.PLOT_T_MAX - config.PLOT_T_MIN)))}ms', transform=fig.transFigure, fontsize=15)
-    fig.text(0.96, 0.03, f'{int(5 / config.SCALE_AMPLITUDE)}mv', transform=fig.transFigure, fontsize=15)
+        # 4. 创建绘图画布
+        fig, axes = plt.subplots(1, 2, figsize=(22, 12))
+        fig.suptitle(f"Raw Trace: {config.TARGET_SUBJECT} - {config.TARGET_PARADIGM} - Trial {config.TARGET_TRIAL} ({t_min:.2f}s - {t_max:.2f}s)", fontsize=18, y=0.98)
+        fig.patch
 
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+        # 5. 绘制左右脑
+        print("正在绘制左半球...")
+        plot_raw_traces_by_region(axes[0], raw_cropped, config.REGION_MAP['Left'], 'Left', fontsize=20, channel_prefix=channel_prefix)
+        
+        print("正在绘制右半球...")
+        plot_raw_traces_by_region(axes[1], raw_cropped, config.REGION_MAP['Right'], 'Right', fontsize=20, channel_prefix=channel_prefix)
 
-    # 6. 保存图像
-    os.makedirs(config.PLOTS_DIR, exist_ok=True)
-    output_filename = f"{config.TARGET_SUBJECT}_{config.TARGET_PARADIGM}_trial{config.TARGET_TRIAL}_raw_trace_{config.PLOT_T_MIN:.2f}s-{config.PLOT_T_MAX:.2f}s.png"
-    output_path = os.path.join(config.PLOTS_DIR, output_filename)
-    print(f"保存图像到: {output_path}")
-    fig.savefig(output_path, dpi=300)
-    plt.show()
+        # 修改main函数中的图形布局部分
+        # 在保存图像前添加以下代码，确保两个子图大小一致
+        fig.subplots_adjust(wspace=0.3)  # 调整子图间距
+        # 在右下角绘制时间和振幅尺度
+        # 绘制垂直虚线
+        fig.add_artist(lines.Line2D([0.98, 0.98], [0.05, 0.1], 
+                color='black', linewidth=2, transform=fig.transFigure))
+        # 绘制水平虚线
+        fig.add_artist(lines.Line2D([0.98, 0.94], [0.05, 0.05], 
+                color='black', linewidth=2, transform=fig.transFigure))
+        fig.text(0.92, 0.05, f'{int(500 * (5 / (t_max - t_min)))}ms', transform=fig.transFigure, fontsize=15)
+        fig.text(0.96, 0.03, f'{int(5 / config.SCALE_AMPLITUDE)}mv', transform=fig.transFigure, fontsize=15)
 
-    print("--- 绘图完成 ---")
+        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+
+        # 6. 保存图像
+        os.makedirs(output_dir, exist_ok=True)
+        output_filename = f"{t_min:.2f}s-{t_max:.2f}s_raw_trace.png"
+        output_path = os.path.join(output_dir, output_filename)
+        print(f"保存图像到: {output_path}")
+        fig.savefig(output_path, dpi=300)
+        plt.close(fig)
+        plt.show()
+
+        print(f"对于时间窗口 {t_min:.2f}s - {t_max:.2f}s 已保存至 {output_path}")
+
+    print(f"--- 时间窗口 {config.PLOT_T_MIN:.2f}s - {config.PLOT_T_MAX:.2f}s 绘图完成，已保存至 {output_dir} --- ")
 
 
 if __name__ == '__main__':

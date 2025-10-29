@@ -137,13 +137,16 @@ REGION_COLORS = {
 # ===================================================================
 
 # 目标数据设置 (可在脚本中覆盖)
-TARGET_SUBJECT = 'mouse3'    # 目标被试
-TARGET_PARADIGM = 'visual'   # 目标范式
-TARGET_TRIAL = 2             # 目标试次
+TARGET_SUBJECT = 'mouse2'    # 目标被试
+TARGET_PARADIGM = 'beard_slow'   # 目标范式
+TARGET_TRIAL = 1             # 目标试次
 
 # 通用时间窗口设置 (可在脚本中覆盖)
-PLOT_T_MIN = 30.0  # 默认绘图起始时间 (秒)
-PLOT_T_MAX = 40.0  # 默认绘图结束时间 (秒)
+PLOT_T_MIN = 0.0  # 默认绘图起始时间 (秒)
+PLOT_T_MAX = 600.0  # 默认绘图结束时间 (秒)
+
+# 新增，绘制每张图的时间窗大小
+PLOT_WINDOW_SIZE = 20.0  # 默认每张图的时间窗口大小 (秒)
 
 # ===================================================================
 # 8. 原始轨迹图设置 (Raw Trace Plotting Settings)
